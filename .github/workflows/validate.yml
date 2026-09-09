@@ -1,0 +1,20 @@
+name: Validate userscript
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Validate JavaScript syntax
+        run: |
+          node --check bunpro-jisho.user.js
+          node --check "Bunpro - Jisho Buttons in Top Bar.js"

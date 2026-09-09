@@ -15,9 +15,6 @@
 // @grant        none
 // ==/UserScript==
 
-// Legacy compatibility copy for installations using the original filename.
-// The canonical source is bunpro-jisho.user.js; do not edit this copy.
-
 (function () {
     'use strict';
 
