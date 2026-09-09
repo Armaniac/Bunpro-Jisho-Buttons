@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bunpro - Jisho Buttons in Top Bar
 // @namespace    https://tampermonkey.net/
-// @version      0.5.2
+// @version      0.5.3
 // @description  Adds Jisho Word / Sentence buttons to Bunpro's top-left icon bar.
 // @author       Arman
 // @match        https://bunpro.jp/*
@@ -108,11 +108,16 @@
         return document.querySelector('#js-tour-quiz-question');
     }
 
+    function isVisibleElement(el) {
+        return Boolean(el && el.getClientRects().length);
+    }
+
     function getVisibleAnswerWord() {
         const questionLine = findQuestionLineElement();
         if (!questionLine) return '';
 
         const correctRoot =
+            (questionLine.matches('.text-correct') ? questionLine : null) ||
             questionLine.querySelector('button > span.inline-block.text-correct') ||
             questionLine.querySelector(':scope > span.text-correct') ||
             questionLine.querySelector('.text-correct');
@@ -129,19 +134,73 @@
 
     function findQuestionLineElement() {
         const section = getQuestionSection();
-        if (!section) return null;
+        const questionSelector =
+            '.QuestionSentenceQuestionCloze.bp-quiz-question, ' +
+            '.QuestionSentenceQuestionListeningReading.bp-quiz-question, ' +
+            '.bp-quiz-question';
+        const candidates = [];
 
-        const questionRoot =
-            (section.matches('.bp-quiz-question') ? section : null) ||
-            section.querySelector(
-                '.QuestionSentenceQuestionCloze.bp-quiz-question, ' +
-                '.QuestionSentenceQuestionListeningReading.bp-quiz-question, ' +
-                '.bp-quiz-question'
+        function addCandidate(el) {
+            if (!el || candidates.includes(el)) return;
+
+            const text = cleanText(
+                stripInlineFuriganaParens(nodeToJapaneseText(el))
             );
 
-        if (!questionRoot) return null;
+            if (isJapanese(text)) {
+                candidates.push(el);
+            }
+        }
 
-        return questionRoot.querySelector(':scope > .text-center') || questionRoot;
+        if (section && section.matches(questionSelector)) {
+            addCandidate(
+                section.querySelector(':scope > .text-center') || section
+            );
+        }
+
+        document.querySelectorAll(questionSelector).forEach((questionRoot) => {
+            addCandidate(
+                questionRoot.querySelector(':scope > .text-center') || questionRoot
+            );
+        });
+
+        document.querySelectorAll('.text-correct').forEach((correctEl) => {
+            addCandidate(
+                correctEl.closest(
+                    '.text-center, .bp-quiz-question, .bp-quiz-leading-hint, p'
+                )
+            );
+        });
+
+        const visibleCandidates = candidates.filter(isVisibleElement);
+        const pool = visibleCandidates.length ? visibleCandidates : candidates;
+
+        if (!pool.length) return null;
+
+        function score(el) {
+            const text = cleanText(
+                stripInlineFuriganaParens(nodeToJapaneseText(el))
+            );
+            let value = Math.min(text.length, 100);
+
+            if (el.matches('.text-correct') || el.querySelector('.text-correct')) {
+                value += 100;
+            }
+            if (
+                el.matches('.text-incorrect, .text-wrong') ||
+                el.querySelector('.text-incorrect, .text-wrong')
+            ) {
+                value -= 100;
+            }
+            if (/[。！？]$/.test(text)) value += 20;
+            if (section && section.contains(el)) value += 50;
+
+            return value;
+        }
+
+        return pool.reduce((best, candidate) =>
+            score(candidate) > score(best) ? candidate : best
+        );
     }
 
     function getSentenceForJisho() {
@@ -150,6 +209,9 @@
 
         return cleanText(
             stripInlineFuriganaParens(nodeToJapaneseText(questionLine))
+        ).replace(
+            /\s*[（(][一-龯々〆ヵヶぁ-んァ-ンー]+[）)]\s*$/,
+            ''
         );
     }
 
