@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bunpro - Jisho Buttons in Top Bar
 // @namespace    https://tampermonkey.net/
-// @version      0.5.3
+// @version      0.5.4
 // @description  Adds Jisho Word / Sentence buttons to Bunpro's top-left icon bar.
 // @author       Arman
 // @match        https://bunpro.jp/*
@@ -29,7 +29,7 @@
         return /[一-龯ぁ-んァ-ン々ー]/.test(text || '');
     }
 
-    function openJisho(text) {
+    function openJisho(text, { kanji = false } = {}) {
         const q = cleanText(text);
         if (!q) {
             alert('No text found to search.');
@@ -37,7 +37,8 @@
         }
 
         const base = 'https://jisho.org/search/';
-        const url = `${base}${encodeURIComponent(q)}`;
+        const searchText = kanji ? `${q} #kanji` : q;
+        const url = `${base}${encodeURIComponent(searchText)}`;
 
         window.open(url, '_blank', 'noopener,noreferrer');
     }
@@ -204,6 +205,10 @@
     }
 
     function getSentenceForJisho() {
+        // Bunpro omits the cloze answer until the result is revealed, so an
+        // unanswered question would otherwise produce an incomplete sentence.
+        if (!getVisibleAnswerWord()) return '';
+
         const questionLine = findQuestionLineElement();
         if (!questionLine) return '';
 
@@ -279,7 +284,7 @@
         wrap.style.marginLeft = '8px';
 
         const wordBtn = createIconButton({
-            title: 'Search revealed answer in Jisho',
+            title: 'Search revealed answer in Jisho with #kanji',
             label: '単',
             onClick: () => {
                 const answer = getVisibleAnswerWord();
@@ -288,7 +293,7 @@
                     return;
                 }
                 log('word:', answer);
-                openJisho(answer);
+                openJisho(answer, { kanji: true });
             }
         });
 
@@ -298,7 +303,7 @@
             onClick: () => {
                 const sentence = getSentenceForJisho();
                 if (!sentence) {
-                    alert('Could not find the Japanese sentence.');
+                    alert('Answer the question before searching the full sentence in Jisho.');
                     return;
                 }
                 log('sentence:', sentence);
