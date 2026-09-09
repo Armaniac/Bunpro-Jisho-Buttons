@@ -12,12 +12,42 @@ A lightweight Tampermonkey userscript that adds two Jisho search buttons to Bunp
 
 ## Installation
 
-1. Install [Tampermonkey](https://www.tampermonkey.net/) in your browser.
-2. Click **[Install the userscript](https://raw.githubusercontent.com/Armaniac/bunpro-jisho/main/bunpro-jisho.user.js)**.
-3. Review the script in Tampermonkey and select **Install**.
-4. Open or reload a [Bunpro](https://bunpro.jp/) review page.
+### Method 1: Copy and paste — recommended for beginners
 
-If the install page displays the source as plain text, open the script file on GitHub and select **Raw**, or check that Tampermonkey is enabled and permitted to run userscripts.
+1. Install [Tampermonkey](https://www.tampermonkey.net/) in your browser.
+2. Open **[bunpro-jisho.user.js on GitHub](https://github.com/Armaniac/bunpro-jisho/blob/main/bunpro-jisho.user.js)**.
+3. Select the **Raw** button above the script.
+4. On the page containing only the script text, press `Ctrl+A` and then `Ctrl+C`. On a Mac, press `Command+A` and then `Command+C`.
+5. Select the Tampermonkey icon in your browser and open **Dashboard**.
+6. Select the **+** tab or **Create a new script**.
+7. In the editor, press `Ctrl+A` and delete the example code already there. On a Mac, press `Command+A`.
+8. Paste the copied script with `Ctrl+V`, or `Command+V` on a Mac.
+9. Select **File → Save**, or press `Ctrl+S`/`Command+S`.
+10. Confirm that **Bunpro - Jisho Buttons in Top Bar** is enabled in the Tampermonkey dashboard.
+11. Open or reload a [Bunpro](https://bunpro.jp/) review page.
+
+### Method 2: Install from the script URL
+
+1. Install Tampermonkey and open its **Dashboard**.
+2. Open the **Utilities** tab. If it is hidden, change Tampermonkey's **Config mode** to **Beginner** or **Advanced** first.
+3. Find **Install from URL** and paste this address:
+
+   ```text
+   https://raw.githubusercontent.com/Armaniac/bunpro-jisho/main/bunpro-jisho.user.js
+   ```
+
+4. Select **Install**, review the script, and confirm the installation.
+5. Reload the Bunpro review page.
+
+### Method 3: Install a downloaded file in Chrome
+
+1. Open **[bunpro-jisho.user.js on GitHub](https://github.com/Armaniac/bunpro-jisho/blob/main/bunpro-jisho.user.js)** and select **Download raw file**.
+2. Open `chrome://extensions` in Chrome.
+3. Open Tampermonkey's **Details** and enable **Allow access to file URLs**.
+4. Drag the downloaded `bunpro-jisho.user.js` file into a Chrome window.
+5. Review and confirm Tampermonkey's installation prompt, then reload Bunpro.
+
+> **Note:** Tampermonkey's **Import from file** area is intended for Tampermonkey backup files in JSON or ZIP format. It may reject an individual `.user.js` file, so use one of the methods above instead.
 
 ## Usage
 
