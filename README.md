@@ -2,7 +2,7 @@
 
 A lightweight Tampermonkey userscript that adds two Jisho search buttons to Bunpro's top bar during reviews.
 
-[Open `bunpro-jisho.user.js` on GitHub](https://github.com/Armaniac/bunpro-jisho/blob/main/bunpro-jisho.user.js)
+[Install the userscript](https://github.com/Armaniac/bunpro-jisho/blob/main/bunpro-jisho.user.js)
 
 ## What it does
 
