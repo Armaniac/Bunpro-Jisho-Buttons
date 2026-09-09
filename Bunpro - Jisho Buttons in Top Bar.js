@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bunpro - Jisho Buttons in Top Bar
 // @namespace    https://tampermonkey.net/
-// @version      0.5.1
+// @version      0.5.2
 // @description  Adds Jisho Word / Sentence buttons to Bunpro's top-left icon bar.
 // @author       Arman
 // @match        https://bunpro.jp/*
@@ -29,7 +29,7 @@
         return /[一-龯ぁ-んァ-ン々ー]/.test(text || '');
     }
 
-    function openJisho(text, { kanji = false } = {}) {
+    function openJisho(text) {
         const q = cleanText(text);
         if (!q) {
             alert('No text found to search.');
@@ -37,9 +37,7 @@
         }
 
         const base = 'https://jisho.org/search/';
-        const url = kanji
-            ? `${base}%23kanji${encodeURIComponent(q)}`
-            : `${base}${encodeURIComponent(q)}`;
+        const url = `${base}${encodeURIComponent(q)}`;
 
         window.open(url, '_blank', 'noopener,noreferrer');
     }
@@ -111,25 +109,19 @@
     }
 
     function getVisibleAnswerWord() {
+        const questionLine = findQuestionLineElement();
+        if (!questionLine) return '';
+
         const correctRoot =
-            document.querySelector('.text-correct') ||
-            document.querySelector('span.inline-block.text-correct');
+            questionLine.querySelector('button > span.inline-block.text-correct') ||
+            questionLine.querySelector(':scope > span.text-correct') ||
+            questionLine.querySelector('.text-correct');
 
         if (correctRoot) {
             const fullText = stripInlineFuriganaParens(nodeToJapaneseText(correctRoot));
             if (isJapanese(fullText)) {
                 return fullText;
             }
-        }
-
-        const rubyInCorrect =
-            document.querySelector('.text-correct ruby') ||
-            document.querySelector('span.inline-block.text-correct ruby') ||
-            document.querySelector('.text-correct [data-force-furigana] ruby');
-
-        if (rubyInCorrect) {
-            const rubyText = rubyToText(rubyInCorrect);
-            if (isJapanese(rubyText)) return rubyText;
         }
 
         return '';
@@ -139,113 +131,26 @@
         const section = getQuestionSection();
         if (!section) return null;
 
-        const candidates = [
-            section.querySelector('.bp-quiz-question'),
-            section.querySelector('[class*="QuestionSentenceQuestionCloze"]'),
-            section.querySelector('[class*="QuestionSentence"]'),
-            section.querySelector('[class*="question"]')
-        ].filter(Boolean);
+        const questionRoot =
+            (section.matches('.bp-quiz-question') ? section : null) ||
+            section.querySelector(
+                '.QuestionSentenceQuestionCloze.bp-quiz-question, ' +
+                '.QuestionSentenceQuestionListeningReading.bp-quiz-question, ' +
+                '.bp-quiz-question'
+            );
 
-        for (const el of candidates) {
-            const text = stripInlineFuriganaParens(nodeToJapaneseText(el));
-            if (isJapanese(text)) return el;
-        }
+        if (!questionRoot) return null;
 
-        let bestEl = null;
-        let bestLen = 0;
-
-        section.querySelectorAll('div, span, p').forEach((el) => {
-            const text = stripInlineFuriganaParens(nodeToJapaneseText(el));
-            if (!isJapanese(text)) return;
-            if (text.length > bestLen) {
-                bestLen = text.length;
-                bestEl = el;
-            }
-        });
-
-        return bestEl;
-    }
-
-    function getQuestionTextWithBlankMarker() {
-        const root = findQuestionLineElement();
-        if (!root) return '';
-
-        function walk(node) {
-            if (!node) return '';
-
-            if (node.nodeType === Node.TEXT_NODE) {
-                return node.textContent || '';
-            }
-
-            if (node.nodeType !== Node.ELEMENT_NODE) {
-                return '';
-            }
-
-            const el = node;
-            const tag = el.tagName.toLowerCase();
-            const className = typeof el.className === 'string' ? el.className : '';
-
-            if (tag === 'rt' || tag === 'rp') {
-                return '';
-            }
-
-            if (tag === 'ruby') {
-                return rubyToText(el);
-            }
-
-            if (
-                className.includes('text-correct') ||
-                className.includes('text-wrong') ||
-                className.includes('bp-quiz-input') ||
-                className.includes('study-area-input') ||
-                className.includes('inline-block text-correct') ||
-                el.hasAttribute('data-answer') ||
-                el.hasAttribute('data-cloze')
-            ) {
-                const text = stripInlineFuriganaParens(nodeToJapaneseText(el));
-                if (isJapanese(text)) return text;
-            }
-
-            const text = cleanText(el.textContent || '');
-
-            if (/^[_＿]+$/.test(text) || /^[—―ー]+$/.test(text)) {
-                return '[[ANSWER]]';
-            }
-
-            let out = '';
-            el.childNodes.forEach((child) => {
-                out += walk(child);
-            });
-
-            return out;
-        }
-
-        let result = walk(root);
-
-        result = result.replace(/[_＿]{2,}/g, '[[ANSWER]]');
-        result = result.replace(/[—―]{2,}/g, '[[ANSWER]]');
-
-        return cleanText(stripInlineFuriganaParens(result));
+        return questionRoot.querySelector(':scope > .text-center') || questionRoot;
     }
 
     function getSentenceForJisho() {
-        const raw = getQuestionTextWithBlankMarker();
-        const answer = getVisibleAnswerWord();
+        const questionLine = findQuestionLineElement();
+        if (!questionLine) return '';
 
-        if (!raw && answer) return answer;
-        if (!raw) return '';
-
-        let sentence = raw;
-
-        if (answer) {
-            sentence = sentence.replace(/\[\[ANSWER\]\]/g, answer);
-        }
-
-        sentence = sentence.replace(/\[\[ANSWER\]\]/g, '');
-        sentence = stripInlineFuriganaParens(sentence);
-        sentence = cleanText(sentence);
-
-        return sentence;
+        return cleanText(
+            stripInlineFuriganaParens(nodeToJapaneseText(questionLine))
+        );
     }
 
     function getTopLeftBar() {
@@ -321,7 +226,7 @@
                     return;
                 }
                 log('word:', answer);
-                openJisho(answer, { kanji: true });
+                openJisho(answer);
             }
         });
 
